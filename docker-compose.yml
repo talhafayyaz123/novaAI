@@ -1,0 +1,87 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-nova}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      FILE_STORAGE_BACKEND: local
+      RAG_TASK_MODE: celery
+      LOCAL_STORAGE_PATH: /app/data/documents
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - document_files:/app/data/documents
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.backend
+    command: celery -A backend.celery_app:celery worker --loglevel=info -Q rag
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      FILE_STORAGE_BACKEND: local
+      RAG_TASK_MODE: celery
+      LOCAL_STORAGE_PATH: /app/data/documents
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - document_files:/app/data/documents
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+
+volumes:
+  pgdata:
+  document_files:

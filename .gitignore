@@ -1,0 +1,14 @@
+# .gitignore for NOVA project
+node_modules/
+frontend/.next/
+frontend/.env.local
+backend/__pycache__/
+__pycache__/
+backend/.venv/
+backend/local_storage/
+frontend/tsconfig.tsbuildinfo
+cookiejar.txt
+payload_register.json
+test.db
+.env
+.DS_Store
