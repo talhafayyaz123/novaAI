@@ -2,7 +2,6 @@ from functools import lru_cache
 from typing import Any
 
 import pymupdf
-from sentence_transformers import SentenceTransformer
 
 
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
@@ -13,7 +12,9 @@ CHUNK_OVERLAP_TOKENS = 50
 
 @lru_cache(maxsize=1)
 def get_embedding_model() -> Any:
-    return SentenceTransformer(EMBEDDING_MODEL_NAME)
+    from sentence_transformers import SentenceTransformer
+
+    return SentenceTransformer(EMBEDDING_MODEL_NAME, device="cpu")
 
 
 def extract_document_pages(content: bytes, extension: str) -> list[tuple[int | None, str]]:

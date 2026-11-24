@@ -19,6 +19,15 @@ NOVA is an AI assistant platform with conversation memory, document question ans
 - AI: Google Gemini; local Sentence Transformers embeddings for document retrieval
 - Background document processing: Celery and Redis in Docker Compose; API background tasks are available for local development
 
+## Render deployment
+
+For a Render Web Service using the repository root, use:
+
+- Build command: `pip install -r backend/requirements.txt`
+- Start command: `uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT`
+
+Set `DATABASE_URL`, `JWT_SECRET_KEY`, and `GEMINI_API_KEY` in the service's environment. Apply database migrations with `alembic upgrade head` before using the service. Document embedding is loaded on demand, so the API can start without importing the ML runtime; document processing and search still need extra memory and may require a larger instance.
+
 ## Local development
 
 
